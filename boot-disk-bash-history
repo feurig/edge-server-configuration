@@ -1,0 +1,119 @@
+apt-get install openssh-server
+reboot
+apt install --yes debootstrap gdisk zfs-initramfs mdadm grub-pc linux-image-generic zsys
+zpool import rpool
+zpool import bpool
+zpool list
+zpool status
+zpool status -L
+grub-probe
+nano /boot/grub/grub.cfg
+update-grub
+zpool export -a
+zpool import -N -R /mnt rpool
+zpool import -N -R /mnt bpool
+zfs load-key -a
+zfs mount -a
+zpool list
+mount --rbind /dev  /mnt/dev
+mount --rbind /proc /mnt/proc
+mount --rbind /sys  /mnt/sys
+mount -t tmpfs tmpfs /mnt/run
+chroot /mnt /bin/bash --login
+mount | grep -v zfs | tac | awk '/\/mnt/ {print $3}' |     xargs -i{} umount -lf {}
+zpool export -a
+
+cd /etc/grub.d/
+nano /etc/default/grub
+update-grub
+cat /boot/grub/grub.cfg
+reboot
+nano /etc/default/grub
+update-grub
+reboot
+
+fdisk -l
+zfs list
+zpool list
+apt-get install gparted
+zpool list -L
+zpool import
+zpool list -L
+zpool export
+zpool export rpool
+zpool import rpool
+zpool import bpool
+zpool export rpool
+zpool import rpool
+zpool list -L
+zpool status -L
+fdisk -l
+gparted /dev/sde
+fdisk /dev/sde
+
+fdisk /dev/sde
+ls -lsa /dev/disk/by-partuuid/|grep sde
+zpool create nrpool b8402382-6255-4147-8b94-a15620115682
+zfs list
+zpool
+zpool list
+zpool export rpool
+zpool import rpool oldrpool
+mkdir /oldroot /newroot
+zpool list
+zpool import -R/oldroot oldrpool
+zpool export oldrpool
+zpool import -R/oldroot oldrpool
+zpool import -R/newroot nrpool rpool
+zpool export nrpool
+zpool list
+zpool import
+zpool import -R/newroot 4103281169370239104 rpool
+update-grub
+zfs snapshot -r oldrpool@for_copy
+zfs send -R oldrpool@for_copy | zfs recv -F rpool
+zpool list
+zpool import
+zpool status -L
+zpool import sde6
+zpool import /dev/sde6
+ls -ls /dev/disk/by-partuuid/|grep sde6
+zpool attach bpool d3bff208-06 a78a37d3-9208-4642-8c3e-669fe656fce9
+zpool status bpool
+zpool detach bpool d3bff208-06
+zpool status bpool
+zpool status
+zpool status rpool
+update-grub
+fdisk -l
+
+sgdisk -p /dev/sde
+sgdisk -R/dev/sdc /dev/sde
+sgdisk -G /dev/sdc
+zpool status
+zpool export oldrpool
+zpool status
+ls -ls /dev/disk/by-partuuid/|grep sdc6
+zpool attach bpool a78a37d3-9208-4642-8c3e-669fe656fce9 27d620c0-09a7-41e2-9299-75533c6dff2f
+zpool status
+ls -ls /dev/disk/by-partuuid/|grep sdc7
+ls -ls /dev/disk/by-partuuid/|grep sdc
+fdisk -L
+fdisk -l
+partprobe
+ls -ls /dev/disk/by-partuuid/|grep sdc7
+zpool status rpool
+zpool status rpool -L
+zpool attach rpool b8402382-6255-4147-8b94-a15620115682 57547a25-5c28-4b96-a0d5-8b277ae31a43
+zpool attach rpool b8402382-6255-4147-8b94-a15620115682 57547a25-5c28-4b96-a0d5-8b277ae31a43 -o ashift=9
+zpool status
+zpool list
+zpool set
+zpool set altroot=/ rpool
+zpool export rpool
+zpool status
+zpool import -R/ rpool
+zpool status
+zpool list
+update-grub
+reboot
