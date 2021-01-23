@@ -31,7 +31,46 @@ root@joey:/# systemctl set-default multi-user.target
 
 Then I added the mirror partitions. I didn't bother with the boot partitions on the mirror disk since they didn't work anyway. 
 
+### at which point I realized I needed to make space for the containers.
+Since the installer only accepted a disk name for the zfs install it took the entire disk. Fortunately we are running zfs. 
+Booting from our minimal install we can break the mirrors we just created and then use the extra disks to recreate a smaller boot disk. (Note: root and boot pools are on sde and sdc).
+#### shrinking a zfs pool 
+``` 
+zpool detach ata-TEAML5Lite3D240G_AB20190109A0101064-part6
+zpool export rpool
+zpool import rpool oldrpool
 
+mkdir /oldroot /newroot
+fdisk /dev/sde
+.... delete partition six and split it into 2 new partitions ....
+ls -lsa /dev/disk/by-id/|grep sde7
+zpool create rpool ata-TEAML5Lite3D240G_AB20190109A0101064-part7
+zpool export oldrpool
+zpool import -R/oldroot oldrpool
+zpool export rpool
+zpool import -R/newroot rpool
+zfs snapshot -r oldrpool@for_copy
+zfs send -R oldrpool@for_copy | zfs recv -F rpool
+zpool list
+zpool export oldrpool
+```
+
+##### attach mirror to boot pool.
+```
+ls -ls /dev/disk/by-partuuid/|grep sde6
+zpool attach bpool ata-TEAML5Lite3D240G_AB20190109A0101064-part6
+zpool status bpool
+zpool detach bpool d3bff208-06
+update-grub
+fdisk -l
+```
+##### copy partitions
+```
+sgdisk -p /dev/sde
+sgdisk -R/dev/sdc /dev/sde
+sgdisk -G /dev/sdc
+```
+##### 
 
 ### Disk Layout. 
 
@@ -120,56 +159,3 @@ root@annie:/home/don# lxc move nina joey:
 * [https://www.reddit.com/r/linuxadmin/comments/j8qzdq/install_ubuntu_server_2004_on_a_zfs_root/](https://www.reddit.com/r/linuxadmin/comments/j8qzdq/install_ubuntu_server_2004_on_a_zfs_root/)
 * [https://www.medo64.com/2020/04/installing-uefi-zfs-root-on-ubuntu-20-04/](https://www.medo64.com/2020/04/installing-uefi-zfs-root-on-ubuntu-20-04/)
 
-### lxd setup.
-
-```
-... snap install lxd --channel=4.0/stable
-root@joey:/home/don# apt-get install lxd
-...
-root@joey:/home/don# lxd init
-Would you like to use LXD clustering? (yes/no) [default=no]: 
-Do you want to configure a new storage pool? (yes/no) [default=yes]: 
-Name of the new storage pool [default=default]: devil
-Name of the storage backend to use (dir, lvm, zfs, ceph, btrfs) [default=zfs]: 
-Would you like to create a new zfs dataset under rpool/lxd? (yes/no) [default=yes]: no
-Create a new ZFS pool? (yes/no) [default=yes]: 
-Would you like to use an existing empty block device (e.g. a disk or partition)? (yes/no) [default=no]: yes
-Path to the existing block device: /dev/sdc2
-Would you like to connect to a MAAS server? (yes/no) [default=no]: 
-Would you like to create a new local network bridge? (yes/no) [default=yes]: no
-Would you like to configure LXD to use an existing bridge or host interface? (yes/no) [default=no]: yes
-Name of the existing bridge or host interface: br0
-Would you like LXD to be available over the network? (yes/no) [default=no]: yes
-Address to bind LXD to (not including port) [default=all]: 192.168.129.65
-Port to bind LXD to [default=8443]: 
-Trust password for new clients: 
-Again: 
-Would you like stale cached images to be updated automatically? (yes/no) [default=yes] 
-Would you like a YAML "lxd init" preseed to be printed? (yes/no) [default=no]: yes
-config:
-  core.https_address: 192.168.129.65:8443
-  core.trust_password: NOT_HERE
-networks: []
-storage_pools:
-- config:
-    source: /dev/disk/by-id/ata-TEAML5Lite3D240G_AB20190109A0101064-part2
-  description: ""
-  name: devil
-  driver: zfs
-profiles:
-- config: {}
-  description: ""
-  devices:
-    eth0:
-      name: eth0
-      nictype: bridged
-      parent: br0
-      type: nic
-    root:
-      path: /
-      pool: devil
-      type: disk
-  name: default
-cluster: null
-
-```
