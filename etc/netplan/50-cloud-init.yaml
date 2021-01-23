@@ -1,0 +1,30 @@
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    ens1:
+        dhcp4: no
+        dhcp6: no
+    enp1s0:
+        dhcp4: no
+        dhcp6: no
+  bridges:
+    br1:
+        dhcp4: no
+        dhcp6: no
+        addresses:
+            - 192.168.129.65/17
+        gateway4: 192.168.129.1
+        nameservers:
+            addresses:
+                - 192.168.129.1
+                - 198.202.31.132
+        interfaces:
+            - enp1s0
+    br0:
+        dhcp4: no
+        dhcp6: no
+        interfaces:
+            - ens1
+
+
