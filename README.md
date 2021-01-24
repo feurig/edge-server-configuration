@@ -124,7 +124,7 @@ Name of the storage backend to use (dir, lvm, zfs, ceph, btrfs) [default=zfs]:
 Would you like to create a new zfs dataset under rpool/lxd? (yes/no) [default=yes]: no
 Create a new ZFS pool? (yes/no) [default=yes]: 
 Would you like to use an existing empty block device (e.g. a disk or partition)? (yes/no) [default=no]: yes
-Path to the existing block device: /dev/sdc2
+Path to the existing block device: /dev/disk/by-id/ata-TEAML5Lite3D240G_AB20190109A0101064-part2
 Would you like to connect to a MAAS server? (yes/no) [default=no]: 
 Would you like to create a new local network bridge? (yes/no) [default=yes]: no
 Would you like to configure LXD to use an existing bridge or host interface? (yes/no) [default=no]: yes
@@ -177,6 +177,12 @@ root@annie:/home/don# lxc profile copy susdev20 joey:
 root@annie:/home/don# lxc profile copy susdev21 joey:
 root@annie:/home/don# lxc move nina joey:
 
+```
+### Install ssacli to talk to the sas/raid controller
+```
+echo deb [trusted=yes] https://downloads.linux.hpe.com/SDR/repo/mcp/ubuntu/ focal current/non-free >>/etc/apt/sources.list
+apt-get update
+apt-get install ssacli
 ```
 
 ### linkdump
