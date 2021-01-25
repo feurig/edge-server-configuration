@@ -60,9 +60,8 @@ zpool export oldrpool
 ls -ls /dev/disk/by-partuuid/|grep sde6
 zpool attach bpool ata-TEAML5Lite3D240G_AB20190109A0101064-part6
 zpool status bpool
+(... wait for resliver to complete ...)
 zpool detach bpool d3bff208-06
-update-grub
-fdisk -l
 ```
 ##### copy partitions from edited disk
 ```
@@ -79,6 +78,8 @@ ls -ls /dev/disk/by-partuuid/|grep sdc7
 zpool attach rpool ata-TEAML5Lite3D240G_AB20190109A0101064-part7 ata-Crucial_CT240M500SSD1_132909461FE4-part7 -o ashift=9
 zpool export rpool
 zpool import -R/ rpool
+zpool status
+(... wait for reslivers to complete ...)
 update-grub
 reboot
 
