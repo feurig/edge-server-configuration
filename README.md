@@ -227,7 +227,7 @@ root@annie:# time zfs send -R filebox@26JAN21|pv|nc -l 3333
 * Destination machine
 
 ```
-root@joey:# annie.local 3333|pv|zfs recv -Fdu filebox
+root@joey:# nc annie.local 3333|pv|zfs recv -Fdu filebox
 ```
 ##### Larger disk
 The archive disk which has 1.6Tb of data required 30 hours to transfer. I have ordered a pair ofjumbo packet capable nics. In theory this should only need to be done once and then deltas can be sent. 
