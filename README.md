@@ -100,10 +100,10 @@ ata-Corsair_Force_GT_1227792800001502028A|120|grub/maintainence disk
 
 id | size | purpose
 ---|---|---
-ata-Hitachi_HDS5C3030ALA630_MJ1311YNG7RM5A|2.7T|/filebox backup
-scsi-3600508b1001c407672486f627337a3e9|1.8T|..
-scsi-3600508b1001cca9043287e57e5adae22|1.8T|..
-scsi-3600508b1001cfe22e99aade7378fb6c1|2.7T|..
+ata-Hitachi_HDS5C3030ALA630_MJ1311YNG7RM5A|2.7T|/archive backup
+scsi-3600508b1001c407672486f627337a3e9|1.8T|theflatfield/filebox backup
+scsi-3600508b1001cca9043287e57e5adae22|1.8T|theflatfield/filebox backup
+scsi-3600508b1001cfe22e99aade7378fb6c1|2.7T|/archive backup
 
 ### Network Configuration 
 [etc/netplan/50-cloud-init.yaml](etc/netplan/50-cloud-init.yaml)
@@ -111,7 +111,16 @@ scsi-3600508b1001cfe22e99aade7378fb6c1|2.7T|..
 * br0 is the isp router side of the network and provides an anonymous bridge.
 * br1 is the internal network and is configured to provide direct connection to the server. 
 
-### lxd setup.
+### Install ssacli to talk to the sas/raid controller
+Like most vendor repositories hp's cant get the signature/otherdata right so we just trust them. (grrrrr)
+
+```
+echo deb [trusted=yes] https://downloads.linux.hpe.com/SDR/repo/mcp/ubuntu/ focal current/non-free >>/etc/apt/sources.list
+apt-get update
+apt-get install ssacli
+```
+
+## Task #3: Container space (LXD Installation and setup).
 
 ```
 ... snap install lxd --channel=4.0/stable
@@ -177,15 +186,13 @@ root@annie:/home/don# lxc profile copy infra joey:
 root@annie:/home/don# lxc profile copy susdev20 joey:
 root@annie:/home/don# lxc profile copy susdev21 joey:
 root@annie:/home/don# lxc move nina joey:
+root@annie:/home/don# lxc start joey:nina
 
 ```
-### Install ssacli to talk to the sas/raid controller
-```
-echo deb [trusted=yes] https://downloads.linux.hpe.com/SDR/repo/mcp/ubuntu/ focal current/non-free >>/etc/apt/sources.list
-apt-get update
-apt-get install ssacli
-```
-### Investigate setting bridge networks mtu to 9000
+
+## Task #2: Disk replication.
+
+#### Investigate setting bridge networks mtu to 9000
 Turns out none of the network adapters on board or cards support jumbo frames. 
 May need to purchase new cards like the [asus nx1101](https://www.ebay.com/itm/Asus-NX1101-Gigabit-Ethernet-PCI-Network-Adapter-jumbo-frame/254641438776)
 
@@ -208,12 +215,32 @@ root@joey:/home/don# ip -d link list
 
 ```
 #### transfer initial large disks from home server.
+##### Smaller disks
+Since we are on a private network we can send files in the clear. For small items this only takes a few hours.
+
+* Source Machine
+
 ```
-YOU ARE HERE
-snapshot 
-send.
+root@annie:# zfs snapshot -r filebox@26JAN21
+root@annie:# time zfs send -R filebox@26JAN21|pv|nc -l 3333
 ```
+* Destination machine
+
+```
+root@joey:# annie.local 3333|pv|zfs recv -Fdu filebox
+```
+##### Larger disk
+The archive disk which has 1.6Tb of data required 30 hours to transfer. I have ordered a pair ofjumbo packet capable nics. In theory this should only need to be done once and then deltas can be sent. 
 ![](img/1843m9s.jpg)
+
+## Task #1: Edgy services.
+
+* pihole
+* squid
+* web server with afs share.
+
+YOU ARE HERE!!!!
+
 ### linkdump
 * [https://openzfs.github.io/openzfs-docs/Getting%20Started/Ubuntu/Ubuntu%2020.04%20Root%20on%20ZFS.html#rescuing-using-a-live-cd](https://openzfs.github.io/openzfs-docs/Getting%20Started/Ubuntu/Ubuntu%2020.04%20Root%20on%20ZFS.html#rescuing-using-a-live-cd)
 * [https://gist.github.com/yorickdowne/a2a330873b16ebf288d74e87d35bff3e](https://gist.github.com/yorickdowne/a2a330873b16ebf288d74e87d35bff3e)
