@@ -109,7 +109,7 @@ scsi-3600508b1001cfe22e99aade7378fb6c1|2.7T|..
 [etc/netplan/50-cloud-init.yaml](etc/netplan/50-cloud-init.yaml)
 
 * br0 is the isp router side of the network and provides an anonymous bridge.
-* br1 is the internal network and is configured to provide direct connection to the server. Set the MTU of this system to 9000 for large transfers between servers.
+* br1 is the internal network and is configured to provide direct connection to the server. 
 
 ### lxd setup.
 
@@ -185,7 +185,35 @@ echo deb [trusted=yes] https://downloads.linux.hpe.com/SDR/repo/mcp/ubuntu/ foca
 apt-get update
 apt-get install ssacli
 ```
+### Investigate setting bridge networks mtu to 9000
+Turns out none of the network adapters on board or cards support jumbo frames. 
+May need to purchase new cards like the [asus nx1101](https://www.ebay.com/itm/Asus-NX1101-Gigabit-Ethernet-PCI-Network-Adapter-jumbo-frame/254641438776)
 
+```
+root@annie:/home/don# ip  -d link show
+...
+2: ens6: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel master br0 state UP mode DEFAULT group default qlen 1000
+    link/ether 00:14:d1:25:2b:bc brd ff:ff:ff:ff:ff:ff promiscuity 1 minmtu 60 maxmtu 7152 
+...
+3: enp1s0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq master br1 state UP mode DEFAULT group default qlen 1000
+    link/ether 78:e7:d1:c3:ef:9e brd ff:ff:ff:ff:ff:ff promiscuity 1 minmtu 60 maxmtu 1500 
+...
+root@joey:/home/don# ip -d link list
+...
+2: ens1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq master br0 state UP mode DEFAULT group default qlen 1000
+    link/ether 00:10:18:1b:53:c0 brd ff:ff:ff:ff:ff:ff promiscuity 1 minmtu 60 maxmtu 1500 
+...
+3: enp1s0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq master br1 state UP mode DEFAULT group default qlen 1000
+    link/ether d4:85:64:99:0e:89 brd ff:ff:ff:ff:ff:ff promiscuity 1 minmtu 60 maxmtu 1500 
+
+```
+#### transfer initial large disks from home server.
+```
+YOU ARE HERE
+snapshot 
+send.
+```
+![](img/1843m9s.jpg)
 ### linkdump
 * [https://openzfs.github.io/openzfs-docs/Getting%20Started/Ubuntu/Ubuntu%2020.04%20Root%20on%20ZFS.html#rescuing-using-a-live-cd](https://openzfs.github.io/openzfs-docs/Getting%20Started/Ubuntu/Ubuntu%2020.04%20Root%20on%20ZFS.html#rescuing-using-a-live-cd)
 * [https://gist.github.com/yorickdowne/a2a330873b16ebf288d74e87d35bff3e](https://gist.github.com/yorickdowne/a2a330873b16ebf288d74e87d35bff3e)

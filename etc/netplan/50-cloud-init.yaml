@@ -9,6 +9,10 @@ network:
         dhcp4: no
         dhcp6: no
   bridges:
+    bigmtu1:
+      match:
+        macaddress: d4:85:64:99:0e:89
+      mtu: "9000"
     br1:
         dhcp4: no
         dhcp6: no
@@ -26,5 +30,3 @@ network:
         dhcp6: no
         interfaces:
             - ens1
-
-
