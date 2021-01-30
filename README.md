@@ -1,5 +1,10 @@
 # Joey Rebuild #
-Joey (ramone) is an edgy server. Joey has 3 main jobs. Stage web content to be pushed or synced to external servers. Provide disk replication for the lan file servers. Provide container space both for lan/wan/edge services and to back up those provided by the file server.
+Joey (ramone) is an edgy server. Joey has 3 main jobs. 
+
+1. Stage web content to be pushed or synced to external servers. 
+2. Provide disk replication for the lan file servers. 
+3. Provide container space both for lan/wan/edge services and to back up those provided by the file server.
+
 ![network diagram](img/HomeNetworkDiagram.jpg)   
 ## Ubuntu 20.04 + zfs root on the Hp z400.
 Someday this will not be so hard :)
@@ -34,7 +39,9 @@ Then I added the mirror partitions. I didn't bother with the boot partitions on 
 ### .....FUUUUUUU...... at that point I realized I needed to make space for the containers.
 Since the installer only accepted a disk name for the zfs install it took the entire disk. Fortunately we are running zfs. 
 Booting from our minimal install we can break the mirrors we just created and then use the extra disks to recreate a smaller boot disk. (Note: root and boot pools were on sde and sdc at this point).
-#### shrinking a zfs pool 
+#### Shrinking a zfs pool.
+To shrink the pool size we split the mirror and repartition one of the disks. Then we copy the data to the smaller partition.
+
 ``` 
 zpool detach ata-TEAML5Lite3D240G_AB20190109A0101064-part6
 zpool export rpool
@@ -55,7 +62,9 @@ zpool list
 zpool export oldrpool
 ```
 
-##### move boot pool to second disk.
+##### Move boot pool to second disk.
+To move the boot pool we attach one the new partitions, mirror it and then detach the original.
+
 ```
 ls -ls /dev/disk/by-partuuid/|grep sde6
 zpool attach bpool ata-TEAML5Lite3D240G_AB20190109A0101064-part6
@@ -63,14 +72,17 @@ zpool status bpool
 (... wait for resliver to complete ...)
 zpool detach bpool d3bff208-06
 ```
-##### copy partitions from edited disk
+##### Copy partitions from edited disk.
+Once everything is on the newly partitioned disk we can copy the modified partition table to the original disk. 
+ 
 ```
 sgdisk -p /dev/sde
 sgdisk -R/dev/sdc /dev/sde
 sgdisk -G /dev/sdc
 partprobe
 ```
-##### remirror to smaller partition
+##### Remirror to smaller partitions on original disk.
+
 ```
 ls -ls /dev/disk/by-partuuid/|grep sdc6
 zpool attach bpool ata-TEAML5Lite3D240G_AB20190109A0101064-part6 ata-Crucial_CT240M500SSD1_132909461FE4-part6
@@ -94,7 +106,6 @@ id | size | purpose
 ata-Crucial_CT240M500SSD1_132909461FE4|240|bpool/rpool/devil
 ata-TEAML5Lite3D240G_AB20190109A0101064|240|bpool/rpool/devil
 ata-Corsair_Force_GT_1227792800001502028A|120|grub/maintainence disk
-
 
 * Archive disks
 
@@ -120,7 +131,7 @@ apt-get update
 apt-get install ssacli
 ```
 
-## Task #3: Container space (LXD Installation and setup).
+## Job #3: Container space (LXD Installation and setup).
 
 ```
 ... snap install lxd --channel=4.0/stable
@@ -189,12 +200,40 @@ root@annie:/home/don# lxc move nina joey:
 root@annie:/home/don# lxc start joey:nina
 
 ```
+### Adding ansible user for annie.
 
-## Task #2: Disk replication.
+```root@joey:# useradd -m -c Annie annie
+root@joey:# passwd annie.
+...
+root@joey:# su -l annie
+annie@joey: ~$ ssh-keygen
+annie@joey: ~$ nano .ssh/authorized_keys
+... paste root@annie public key ...
+```
 
+## Job #2: Disk replication.
+
+#### transfer initial large disks from home server.
+##### Smaller disks
+Since we are on a private network we can send files in the clear. For small items this only takes a few hours.
+
+* Source Machine
+
+```
+root@annie:# zfs snapshot -r filebox@26JAN21
+root@annie:# time zfs send -R filebox@26JAN21|pv|nc -l 3333
+```
+* Destination machine
+
+```
+root@joey:# nc annie.local 3333|pv|zfs recv -Fdu filebox
+```
+##### Larger disk
+The archive disk which has 1.6Tb of data required 30 hours to transfer. I have ordered a pair ofjumbo packet capable nics. In theory this should only need to be done once and then deltas can be sent. 
+![](img/1843m9s.jpg)
 #### Investigate setting bridge networks mtu to 9000
 Turns out none of the network adapters on board or cards support jumbo frames. 
-May need to purchase new cards like the [asus nx1101](https://www.ebay.com/itm/Asus-NX1101-Gigabit-Ethernet-PCI-Network-Adapter-jumbo-frame/254641438776)
+
 
 ```
 root@annie:/home/don# ip  -d link show
@@ -214,32 +253,97 @@ root@joey:/home/don# ip -d link list
     link/ether d4:85:64:99:0e:89 brd ff:ff:ff:ff:ff:ff promiscuity 1 minmtu 60 maxmtu 1500 
 
 ```
-#### transfer initial large disks from home server.
-##### Smaller disks
-Since we are on a private network we can send files in the clear. For small items this only takes a few hours.
+Purchased two new jumbo packet capable network cards: one like the [asus nx1101](https://www.ebay.com/itm/Asus-NX1101-Gigabit-Ethernet-PCI-Network-Adapter-jumbo-frame/254641438776), the other with usb3 ports.
 
-* Source Machine
-
-```
-root@annie:# zfs snapshot -r filebox@26JAN21
-root@annie:# time zfs send -R filebox@26JAN21|pv|nc -l 3333
-```
-* Destination machine
-
-```
-root@joey:# nc annie.local 3333|pv|zfs recv -Fdu filebox
-```
-##### Larger disk
-The archive disk which has 1.6Tb of data required 30 hours to transfer. I have ordered a pair ofjumbo packet capable nics. In theory this should only need to be done once and then deltas can be sent. 
-![](img/1843m9s.jpg)
-
-## Task #1: Edgy services.
+## Job #1: Edgy services.
 
 * pihole
-* squid
-* web server with afs share.
 
-YOU ARE HERE!!!!
+```
+apt-get install git-core
+git clone --depth 1 https://github.com/pi-hole/pi-hole.git Pi-hole
+cd Pi-hole/automated\ install/
+bash basic-install.sh 
+pihole -a -p
+pihole enable
+service pihole-FTL restart
+nano /usr/local/bin/update.sh
+... add pihole to update ...
+if  [ -x "$(command -v pihole)" ]; then
+  echo pihole upgrade.
+  pihole -up
+fi
+...
+```
+* squid
+
+```
+apt-get install squid
+nano /etc/squid/squid.conf 
+...
+acl SSL_ports port 443
+acl Safe_ports port 80          # http
+acl Safe_ports port 21          # ftp
+acl Safe_ports port 443         # https
+acl Safe_ports port 70          # gopher
+acl Safe_ports port 210         # wais
+acl Safe_ports port 1025-65535  # unregistered ports
+acl Safe_ports port 280         # http-mgmt
+acl Safe_ports port 488         # gss-http
+acl Safe_ports port 591         # filemaker
+acl Safe_ports port 777         # multiling http
+acl CONNECT method CONNECT
+http_access deny !Safe_ports
+http_access deny CONNECT !SSL_ports
+http_access allow localhost manager
+http_access deny manager
+http_access allow localhost
+acl my_internal_net src 192.168.0.0/24
+http_access allow my_internal_net
+http_port 3128
+coredump_dir /var/spool/squid
+refresh_pattern ^ftp:           1440    20%     10080
+refresh_pattern ^gopher:        1440    0%      1440
+refresh_pattern -i (/cgi-bin/|\?) 0     0%      0
+refresh_pattern (Release|Packages(.gz)*)$      0       20%     2880
+refresh_pattern .               0       20%     4320
+```
+* web server with afs share.
+   * mapping users/drives on the container host
+
+   ```
+   echo 'root:1000:1' | sudo tee -a /etc/subuid /etc/subgid
+   cat /etc/subgid
+   lxc config set nina raw.idmap 'both 1000 1000'
+   lxc config edit nina
+   ...
+   devices:
+    sdg1:
+      path: theflatfield
+      source: /theflatfield
+      type: disk
+   ...
+   
+   lxc start nina
+   
+   ```
+   * installing netatalk on container
+
+   ```
+   apt-get install netatalk
+   useradd don -m -c"Donald Delmar Davis" -u 1000 -g 1000
+   passwd don
+   nano /etc/netatalk/afp.conf 
+   [Global]
+   ; Global server settings
+   valid users=don
+   ; [Homes]
+   ; basedir regex = /xxxx
+   [TheFlatField] 
+   path=/theflatfield
+   ```
+
+
 
 ### linkdump
 * [https://openzfs.github.io/openzfs-docs/Getting%20Started/Ubuntu/Ubuntu%2020.04%20Root%20on%20ZFS.html#rescuing-using-a-live-cd](https://openzfs.github.io/openzfs-docs/Getting%20Started/Ubuntu/Ubuntu%2020.04%20Root%20on%20ZFS.html#rescuing-using-a-live-cd)
@@ -247,4 +351,5 @@ YOU ARE HERE!!!!
 * [https://saveriomiroddi.github.io/Installing-Ubuntu-on-a-ZFS-root-with-encryption-and-mirroring/#cloning-the-efi-partition](https://saveriomiroddi.github.io/Installing-Ubuntu-on-a-ZFS-root-with-encryption-and-mirroring/#cloning-the-efi-partition)
 * [https://www.reddit.com/r/linuxadmin/comments/j8qzdq/install_ubuntu_server_2004_on_a_zfs_root/](https://www.reddit.com/r/linuxadmin/comments/j8qzdq/install_ubuntu_server_2004_on_a_zfs_root/)
 * [https://www.medo64.com/2020/04/installing-uefi-zfs-root-on-ubuntu-20-04/](https://www.medo64.com/2020/04/installing-uefi-zfs-root-on-ubuntu-20-04/)
-
+* [https://serverdocs.suspectdevices.com/serverdocs/wiki/NotesOnAppleTalk3vsUbuntu](https://serverdocs.suspectdevices.com/serverdocs/wiki/NotesOnAppleTalk3vsUbuntu)
+* [https://serverdocs.suspectdevices.com/serverdocs/wiki/TaskInstallSquidCaching](https://serverdocs.suspectdevices.com/serverdocs/wiki/TaskInstallSquidCaching)
