@@ -253,7 +253,43 @@ root@joey:/home/don# ip -d link list
     link/ether d4:85:64:99:0e:89 brd ff:ff:ff:ff:ff:ff promiscuity 1 minmtu 60 maxmtu 1500 
 
 ```
-Purchased two new jumbo packet capable network cards: one like the [asus nx1101](https://www.ebay.com/itm/Asus-NX1101-Gigabit-Ethernet-PCI-Network-Adapter-jumbo-frame/254641438776), the other with usb3 ports.
+Purchased two new jumbo packet capable network cards: one like the [asus nx1101](https://www.ebay.com/itm/Asus-NX1101-Gigabit-Ethernet-PCI-Network-Adapter-jumbo-frame/254641438776).
+The new cards produced a maximum mtu of 7xxx given that we add the following to /etc/netplan/50-cloud-init.yaml 
+
+```
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    ens6:
+        match:
+          macaddress: 30:85:a9:38:cc:11
+        mtu: 7000
+        dhcp4: no
+        dhcp6: no
+    enp1s0:
+        dhcp4: no
+        dhcp6: no
+  bridges:
+    br1:
+        dhcp4: no
+        dhcp6: no
+        mtu: 7000
+        addresses:
+            - 192.168.129.65/17
+        gateway4: 192.168.129.1
+        nameservers:
+            addresses:
+                - 192.168.129.1
+                - 198.202.31.132
+        interfaces:
+            - ens6
+    br0:
+        dhcp4: no
+        dhcp6: no
+        interfaces:
+            - enp1s0
+```
 
 ## Job #1: Edgy services.
 
