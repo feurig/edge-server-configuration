@@ -96,6 +96,8 @@ update-grub
 reboot
 
 ```
+#### If I were to do this again.
+Now that we know that ubuntu will install a functioning zfs installation I would install the minimal system on the mirror disk and migrate the rpool and bpool to the mirror rather than using a separate disk. I still have that option.
 
 ### Disk Layout. 
 
@@ -214,6 +216,7 @@ annie@joey: ~$ nano .ssh/authorized_keys
 ## Job #2: Disk replication.
 
 #### transfer initial large disks from home server.
+
 ##### Smaller disks
 Since we are on a private network we can send files in the clear. For small items this only takes a few hours.
 
@@ -223,15 +226,17 @@ Since we are on a private network we can send files in the clear. For small item
 root@annie:# zfs snapshot -r filebox@26JAN21
 root@annie:# time zfs send -R filebox@26JAN21|pv|nc -l 3333
 ```
+
 * Destination machine
 
 ```
 root@joey:# nc annie.local 3333|pv|zfs recv -Fdu filebox
 ```
+
 ##### Larger disk
 The archive disk which has 1.6Tb of data required 30 hours to transfer. I have ordered a pair ofjumbo packet capable nics. In theory this should only need to be done once and then deltas can be sent. 
 ![](img/1843m9s.jpg)
-#### Investigate setting bridge networks mtu to 9000
+#### Investigate larger mtu values.
 Turns out none of the network adapters on board or cards support jumbo frames. 
 
 
@@ -253,8 +258,9 @@ root@joey:/home/don# ip -d link list
     link/ether d4:85:64:99:0e:89 brd ff:ff:ff:ff:ff:ff promiscuity 1 minmtu 60 maxmtu 1500 
 
 ```
+
 Purchased two new jumbo packet capable network cards: one like the [asus nx1101](https://www.ebay.com/itm/Asus-NX1101-Gigabit-Ethernet-PCI-Network-Adapter-jumbo-frame/254641438776).
-The new cards produced a maximum mtu of 7xxx given that we add the following to /etc/netplan/50-cloud-init.yaml 
+The new cards produced a maximum mtu of 71xx. Given that we add the following to /etc/netplan/50-cloud-init.yaml 
 
 ```
 network:
@@ -345,6 +351,7 @@ refresh_pattern (Release|Packages(.gz)*)$      0       20%     2880
 refresh_pattern .               0       20%     4320
 ```
 * web server with afs share.
+
    * mapping users/drives on the container host
 
    ```
@@ -363,6 +370,7 @@ refresh_pattern .               0       20%     4320
    lxc start nina
    
    ```
+   
    * installing netatalk on container
 
    ```
