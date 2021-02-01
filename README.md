@@ -300,7 +300,7 @@ network:
 
 ## Job #1: Edgy services.
 
-* pihole
+### pihole
 
 ```
 apt-get install git-core
@@ -318,7 +318,7 @@ if  [ -x "$(command -v pihole)" ]; then
 fi
 ...
 ```
-* squid
+### squid
 
 ```
 apt-get install squid
@@ -351,44 +351,49 @@ refresh_pattern -i (/cgi-bin/|\?) 0     0%      0
 refresh_pattern (Release|Packages(.gz)*)$      0       20%     2880
 refresh_pattern .               0       20%     4320
 ```
-* web server with afs share.
+### web server with afs share.
 
-   mapping users/drives on the container host
+#### mapping users/drives on the container host
 
-   ```
-   echo 'root:1000:1' | sudo tee -a /etc/subuid /etc/subgid
-   cat /etc/subgid
-   lxc config set nina raw.idmap 'both 1000 1000'
-   lxc config edit nina
-   ...
-   devices:
-    sdg1:
+```
+echo 'root:1000:1' | sudo tee -a /etc/subuid /etc/subgid
+cat /etc/subgid
+lxc config set nina raw.idmap 'both 1000 1000'
+lxc config edit nina
+...
+devices:
+   sdg1:
       path: theflatfield
       source: /theflatfield
       type: disk
-   ...
+...
+lxc start nina
+```
    
-   lxc start nina
-   
-   ```
-   
-   installing netatalk on container
+#### Installing netatalk on container
 
-   ```
-   apt-get install netatalk
-   useradd don -m -c"Donald Delmar Davis" -u 1000 -g 1000
-   passwd don
-   nano /etc/netatalk/afp.conf 
-   [Global]
-   ; Global server settings
-   valid users=don
-   ; [Homes]
-   ; basedir regex = /xxxx
-   [TheFlatField] 
-   path=/theflatfield
-   ```
+```
+apt-get install netatalk
+useradd don -m -c"Donald Delmar Davis" -u 1000 -g 1000
+passwd don
+nano /etc/netatalk/afp.conf 
+[Global]
+ ; Global server settings
+ valid users=don
+ ; [Homes]
+ ; basedir regex = /xxxx
+[TheFlatField] 
+ path=/theflatfield
+```
+#### Serving it up with lighttpd
 
-
+```
+apt-get install lighttpd
+nano /etc/lighttpd/lighttpd.conf
+...
+server.document-root        = "/theflatfield/static/digithink/site"
+...
+```
 
 ### linkdump
 * [https://openzfs.github.io/openzfs-docs/Getting%20Started/Ubuntu/Ubuntu%2020.04%20Root%20on%20ZFS.html#rescuing-using-a-live-cd](https://openzfs.github.io/openzfs-docs/Getting%20Started/Ubuntu/Ubuntu%2020.04%20Root%20on%20ZFS.html#rescuing-using-a-live-cd)
