@@ -204,7 +204,8 @@ root@annie:/home/don# lxc start joey:nina
 ```
 ### Adding ansible user for annie.
 
-```root@joey:# useradd -m -c Annie annie
+```
+root@joey:# useradd -m -c Annie annie
 root@joey:# passwd annie.
 ...
 root@joey:# su -l annie
