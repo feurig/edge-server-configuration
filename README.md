@@ -353,7 +353,7 @@ refresh_pattern .               0       20%     4320
 ```
 * web server with afs share.
 
-   * mapping users/drives on the container host
+   mapping users/drives on the container host
 
    ```
    echo 'root:1000:1' | sudo tee -a /etc/subuid /etc/subgid
@@ -372,7 +372,7 @@ refresh_pattern .               0       20%     4320
    
    ```
    
-   * installing netatalk on container
+   installing netatalk on container
 
    ```
    apt-get install netatalk
